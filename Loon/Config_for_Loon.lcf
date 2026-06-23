@@ -1,0 +1,241 @@
+# Loon 宇宙究极超级无敌最强螺旋升天懒人自用配置
+# Date: 2026/06/23
+# Author:  翀𝙡𝙧  TG：https://t.me/chong_redaily 
+
+# ===== [General] =====
+# 基础运行参数：DNS、IP 栈、TUN/VIF、测试 URL、资源数据库、局域网访问与 SSID 触发
+[General]
+# 指定 DNS-over-HTTPS 服务器
+doh-server = https://223.5.5.5/dns-query,https://223.6.6.6/dns-query
+# IP 栈模式；dual 表示 IPv4/IPv6 双栈解析与连接
+ip-mode = prefer-v6
+# IPv6 虚拟接口策略；auto 让 Loon 根据系统/网络自动处理 IPv6
+ipv6-vif = auto
+# 传统 DNS 服务器；system 表示使用系统 DNS，DoH 与 Host 规则会共同参与解析
+dns-server = system,223.5.5.5,119.29.29.29
+# 启用 TLS SNI 嗅探，用于在未拿到域名规则时根据 SNI 辅助分流
+sni-sniffing = true
+# 禁用 STUN，降低 WebRTC/STUN 泄露真实 IP 的风险
+disable-stun = true
+# DNS 类拒绝的返回方式；LoopbackIP 通常让被拒域名返回回环地址
+dns-reject-mode = LoopbackIP
+# 域名类 REJECT 的处理方式，通过 DNS 层阻断
+domain-reject-mode = DNS
+# UDP 无可用转发时的兜底动作
+udp-fallback-mode = REJECT
+# 局域网共享 HTTP 代理端口
+wifi-access-http-port = 7222
+# 局域网共享 SOCKS5 代理端口
+wifi-access-socks5-port = 7221
+# 是否允许同 WiFi 其他设备连接本机代理
+allow-wifi-access = false
+# 网络接口模式；auto 表示自动选择 TUN/VIF 等接口策略
+interface-mode = auto
+# 节点/网络测试超时时间
+test-timeout = 5
+# 切换策略时断开既有连接，确保新策略立即生效，但可能中断正在播放/下载的连接
+disconnect-on-policy-change = true
+# 用于判断互联网连通性的测试 URL
+internet-test-url = http://www.apple.com/library/test/success.html
+# 用于代理节点延迟/可用性测试的 URL
+proxy-test-url = http://www.gstatic.com/generate_204
+# 资源解析器；用于解析/转换远程订阅资源
+resource-parser = https://raw.githubusercontent.com/sub-store-org/Sub-Store/release/sub-store-parser.loon.min.js
+# GeoIP 数据库地址，用于 GEOIP 国家/地区规则匹配
+geoip-url = https://geodata.kelee.one/Country-Masaiki.mmdb
+# IP ASN 数据库地址，用于 ASN 类规则或插件查询
+ipasn-url = https://geodata.kelee.one/GeoLite2-ASN-P3TERX.mmdb
+# HTTP 代理模式下绕过代理的域名/IP；用于本地网段、局域网域名和部分崩溃上报域名
+skip-proxy = 192.168.0.0/18,16,10.0.0.0/8,172.16.0.0/12,localhost,*.local,e.crashlytics.com
+# TUN/VIF 层绕过的 IP 网段；主要覆盖私有地址、保留地址、组播等，不进入代理隧道
+bypass-tun = 10.0.0.0/8,100.64.0.0/10,127.0.0.0/8,169.254.0.0/16,172.16.0.0/12,192.0.0.0/24,192.0.2.0/24,192.88.99.0/24,192.168.0.0/18,198.51.100.0/24,203.0.113.0/24,224.0.0.0/4,255.255.255.255/32
+# 按 SSID 自动切换策略；default/cellular 为 rule，指定SSID下直连
+#ssid-trigger = "default":rule, "cellular":rule,"114514":DIRECT,"114514":DIRECT
+
+# ===== [Proxy] =====
+# 本地节点区
+[Proxy]
+
+# ===== [Remote Proxy] =====
+# 远程节点订阅区
+[Remote Proxy]
+# 临时使用节点，来源于互联网
+临时使用@mianfeicf = https://sp.linuxdododo.ccwu.cc/qazwsxedc159+,udp=true,block-quic=true,fast-open=false,vmess-aead=true,skip-cert-verify=default,enabled=false,flexible-sni=false,img-url=https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/05icon/yu(1).png
+临时使用@gitbigg = https://raw.githubusercontent.com/gitbigg/jd/main/new#delreg=.*&rename=@tg%40ddgksf2021-+@num-$index7,udp=true,block-quic=true,fast-open=false,vmess-aead=true,skip-cert-verify=default,enabled=false,flexible-sni=false,img-url=https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/05icon/yu(1).png
+临时使用@Ruk1ng001 = https://sub.789.st/sub?target=quanx&url=https://raw.githubusercontent.com/go4sharing/sub/main/sub.yaml&sort=true&_=1713889639570,udp=true,block-quic=true,fast-open=false,vmess-aead=true,skip-cert-verify=default,enabled=true,flexible-sni=false,img-url=https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/05icon/yu(1).png
+
+# ===== [Remote Filter] =====
+# 远程节点筛选器；用 NameRegex 按节点名称提取香港、台湾、日本等地区节点池
+[Remote Filter]
+# 节点池
+香港节点池 = NameRegex, FilterKey = "(🇭🇰|港|\bHK(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|hk|Hong Kong|HongKong|hongkong|HONG KONG|HONGKONG|深港|HKG|九龙|Kowloon|新界|沙田|荃湾|葵涌)"
+台湾节点池 = NameRegex, FilterKey = "(🇹🇼|🇼🇸|台|新北|彰化|\bTW(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|Taiwan|TAIWAN|TWN|TPE|ROC)"
+日本节点池 = NameRegex, FilterKey = "(🇯🇵|日本|川日|东京|大阪|泉日|埼玉|沪日|深日|(?<!尼|-)日|\bJP(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|Japan|JAPAN|JPN|NRT|HND|KIX|TYO|OSA|关西|Kansai|KANSAI)"
+韩国节点池 = NameRegex, FilterKey = "(🇰🇷|\bKR(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|Korea|KOREA|KOR|首尔|韩|韓|春川|Chuncheon|ICN)"
+狮城节点池 = NameRegex, FilterKey = "(🇸🇬|新加坡|坡|狮城|\bSG(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|Singapore|SINGAPORE|SIN)"
+美国节点池 = NameRegex, FilterKey = "(🇺🇸|美|波特兰|达拉斯|俄勒冈|凤凰城|费利蒙|硅谷|拉斯维加斯|洛杉矶|圣何塞|圣克拉拉|西雅图|芝加哥|纽约|纽纽|亚特兰大|迈阿密|华盛顿|\bUS(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|United States|UnitedStates|UNITED STATES|USA|America|AMERICA|JFK|EWR|IAD|ATL|ORD|MIA|NYC|LAX|SFO|SEA|DFW|SJC)"
+英国节点池 = NameRegex, FilterKey = "(🇬🇧|英国|Britain|United Kingdom|UNITED KINGDOM|England|伦敦|曼彻斯特|Manchester|\bUK(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|GBR|LHR|MAN)"
+法国节点池 = NameRegex, FilterKey = "(🇫🇷|法国|\bFR(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|France|FRANCE|FRA|巴黎|马赛|Marseille|CDG|MRS)"
+德国节点池 = NameRegex, FilterKey = "(🇩🇪|德国|Germany|GERMANY|\bDE(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|DEU|柏林|法兰克福|慕尼黑|Munich|MUC)"
+加拿大节点池 = NameRegex, FilterKey = "(🇨🇦|加拿大|\bCA(?:[-_ ]?\d+(?:[-_ ]?[A-Za-z]{2,})?)?\b|Canada|CANADA|CAN|渥太华|温哥华|卡尔加里|蒙特利尔|Montreal|YVR|YYZ|YUL)"
+俄罗斯节点池 = NameRegex, FilterKey = "(🇷🇺|(?<!白)俄罗斯|(?<!白)俄|莫斯科|圣彼得堡|新西伯利亚|海参崴|符拉迪沃斯托克|哈巴罗夫斯克|伯力|\bRU(?:[-_ ]?\d+)?\b|Russia)"
+其他地区节点池 = NameRegex, FilterKey = "(^(?!.*(wrt|港|HK|Hong Kong|HKG|🇭🇰|美|US|USA|America|🇺🇸|日本|JP|Japan|🇯🇵|新加坡|SG|Singapore|🇸🇬|台|TW|Taiwan|🇹🇼|韩国|KR|Korea|🇰🇷|加拿大|CA|Canada|🇨🇦|英国|UK|GBR|Britain|🇬🇧|法国|FR|France|🇫🇷|德国|DE|Germany|俄罗斯|RU|Russia|🇷🇺)).*)"
+
+# ===== [Proxy Group] =====
+# 策略组区；定义手动选择、自动测速、业务分流组以及地区测速组
+[Proxy Group]
+# 策略组
+自动选择 = url-test,香港节点池,台湾节点池,日本节点池,韩国节点池,狮城节点池,美国节点池,英国节点池,法国节点池,德国节点池,加拿大节点池,俄罗斯节点池,其他地区节点池,url = http://www.gstatic.com/generate_204,interval = 1800,tolerance = 20,img-url = https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Auto.png
+手动选择 = select,香港节点池,台湾节点池,日本节点池,韩国节点池,狮城节点池,美国节点池,英国节点池,法国节点池,德国节点池,加拿大节点池,俄罗斯节点池,其他地区节点池,img-url = https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Magic.png
+AI服务 = select,手动选择,美国节点,台湾节点,日本节点,狮城节点,英国节点,法国节点,德国节点,加拿大节点,img-url = https://raw.githubusercontent.com/lige47/QuanX-icon-rule/main/icon/04ProxySoft/chatgpt4.0.png
+Github = select,自动选择,手动选择,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/GitHub.png
+即时通信 = select,自动选择,手动选择,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/Telegram.png
+社交媒体 = select,自动选择,手动选择,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,其他地区,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/Twitter.png
+苹果服务 = select,全球直连,自动选择,手动选择,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/Apple.png
+微软服务 = select,全球直连,自动选择,手动选择,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/Microsoft.png
+谷歌服务 = select,自动选择,手动选择,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/Google.png
+国际媒体 = select,自动选择,手动选择,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/YouTube.png
+Emby服务 = select,自动选择,手动选择,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/Emby.png
+游戏平台 = select,全球直连,自动选择,手动选择,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Game.png
+测速工具 = select,自动选择,手动选择,全球直连,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/Speedtest.png
+漏网之鱼 = select,手动选择,全球直连,香港节点,台湾节点,日本节点,韩国节点,狮城节点,美国节点,英国节点,法国节点,德国节点,加拿大节点,俄罗斯节点,其他地区,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/Final.png
+全球直连 = select,DIRECT,img-url = https://raw.githubusercontent.com/Koolson/Qure/master/IconSet/Color/Global.png
+
+# 节点组
+香港节点 = url-test,香港节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/HK.png
+台湾节点 = url-test,台湾节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/TW.png
+日本节点 = url-test,日本节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/JP.png
+韩国节点 = url-test,韩国节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/KR.png
+狮城节点 = url-test,狮城节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/SG.png
+美国节点 = url-test,美国节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/US.png
+英国节点 = url-test,英国节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/UK.png
+法国节点 = url-test,法国节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/FR.png
+德国节点 = url-test,德国节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/DE.png
+加拿大节点 = url-test,加拿大节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/CA.png
+俄罗斯节点 = url-test,俄罗斯节点池,interval = 1800,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/RU.png
+其他地区 = select,其他地区节点池,img-url = https://raw.githubusercontent.com/Orz-3/mini/master/Color/UN.png
+
+# ===== [Rule] =====
+# 本地规则区；少量直连/保留网段规则与 FINAL 兜底
+[Rule]
+# 比较容易忽视的直连补充
+DOMAIN,ad.12306.cn,DIRECT
+DOMAIN,sdkapp.uve.weibo.com,DIRECT
+DOMAIN,invite.linuxdo.org,DIRECT
+# 模板自带底层防泄漏与国内路由直连
+IP-CIDR,28.0.0.1/8,DIRECT
+IP-CIDR,198.18.0.1/16,DIRECT
+IP-CIDR,198.18.0.0/15,DIRECT
+IP-CIDR6,fc00::/18,DIRECT
+
+# 最终兜底规则；所有未命中规则流量走「漏网之鱼」
+FINAL,漏网之鱼
+
+# ===== [Remote Rule] =====
+# 远程规则订阅区；广告、隐私、社交、AI、媒体、游戏平台、国内网站等分类规则
+[Remote Rule]
+# 远程分流订阅 
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Privacy/Privacy.list, policy=REJECT, tag=隐私保护, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Advertising/Advertising.list, policy=REJECT, tag=广告终结者, enabled=true
+https://raw.githubusercontent.com/ddgksf2013/Filter/master/Unbreak.list, policy=全球直连, tag=规则修正, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/WeChat/WeChat.list, policy=全球直连, tag=微信直连, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Telegram/Telegram.list, policy=即时通信, tag=Telegram, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Twitter/Twitter.list, policy=社交媒体, tag=Twitter, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Discord/Discord.list, policy=即时通信, tag=Discord, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Instagram/Instagram.list, policy=社交媒体, tag=Instagram, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Facebook/Facebook.list, policy=社交媒体, tag=Facebook, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Reddit/Reddit.list, policy=社交媒体, tag=Reddit, enabled=true
+https://raw.githubusercontent.com/VPSDance/ai-proxy-rules/refs/heads/main/rules/loon/all.list, policy=AI服务, tag=Ai服务, enabled=true
+https://raw.githubusercontent.com/ddgksf2013/Filter/refs/heads/master/AppleIntelligence.list, policy=AI服务, tag=Apple intelligence, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/GitHub/GitHub.list, policy=Github, tag=Github, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/GlobalMedia/GlobalMedia.list, policy=国际媒体, tag=国际媒体, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Apple/Apple.list, policy=苹果服务, tag=苹果服务, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Microsoft/Microsoft.list, policy=微软服务, tag=微软服务, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Google/Google.list, policy=谷歌服务, tag=谷歌服务, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/Game/Game.list, policy=游戏平台, tag=游戏平台, enabled=true
+https://kelee.one/Tool/Loon/Lsr/SpeedtestInternational.lsr, policy=测速工具, tag=测速工具, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/ProxyLite/ProxyLite.list, policy=手动选择, tag=全球加速, enabled=true
+https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Loon/GlobalScholar/GlobalScholar.list, policy=手动选择, tag=学术网站, enabled=true
+https://raw.githubusercontent.com/VirgilClyne/GetSomeFries/main/ruleset/ASN.China.list, policy=全球直连, tag=国内网站, enabled=true
+
+# iKeLee 模板自带核心分流
+https://kelee.one/Tool/Loon/Lsr/LAN_SPLITTER.lsr, policy=全球直连, tag=本地网络, enabled=true
+
+# ===== [Host] =====
+# Host/DNS 映射区；为指定域名指定 DNS 服务器
+[Host]
+*.icloud.com = server:119.29.29.29
+*.icloud.com.cn = server:119.29.29.29
+*.tencent.com = server:119.29.29.29
+*.weixin.com = server:119.29.29.29
+# ===== [Rewrite] =====
+# URL 重写区；
+[Rewrite]
+# URL Rewrite；命中左侧正则后执行 302 跳转到右侧地址
+^https?:\/\/(www.)?(g|google)\.cn 302 https://www.google.com
+
+# ===== [Script] =====
+# 脚本区；
+[Script]
+# AppStore 限免推送
+cron "17 17 * * *" script-path=https://raw.githubusercontent.com/deezertidal/private/main/appsdoor.js, timeout=300, tag=AppStore限免APP
+
+# ===== [Plugin] =====
+# 插件区；批量加载去广告、HTTPDNS 阻断、DNS 防泄漏、节点检测、BoxJs 等模块
+[Plugin]
+https://kelee.one/Tool/Loon/Lpx/Weibo_remove_ads.lpx, enabled=true
+
+# 模块列表
+# 去广告模块
+https://kelee.one/Tool/Loon/Lpx/BlockAdvertisers.lpx, pin=true, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Zhihu_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/XiaoHeiHe_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/FleaMarket_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/WexinMiniPrograms_Remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Weixin_external_links_unlock.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Weixin_Official_Accounts_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/NeteaseCloudMusic_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/SF-Express_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/smzdm_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Amap_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/DiDi_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Cainiao_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Bilibili_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/BaiduNetDisk_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Tieba_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/AliYunDrive_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/iQiYi_Video_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/YouTube_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/QQMusic_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/12306_remove_ads.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/123NetWorkDisk_remove_ads.lpx, enabled=true
+
+# 增强模块
+https://kelee.one/Tool/Loon/Lpx/AppleWeatherEnhancer.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Google.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/QuickSearch.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Auto_Join_TF.lpx, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Block_HTTPDNS.lpx, pin=true, enabled=true
+
+# DNS 防泄漏插件
+https://kelee.one/Tool/Loon/Lpx/Prevent_DNS_Leaks.lpx, policy=漏网之鱼, enabled=true
+
+# BoxJs 面板
+https://kelee.one/Tool/Loon/Lpx/BoxJs.lpx, policy=漏网之鱼, enabled=true
+
+# Sub-Store 订阅管理插件
+https://kelee.one/Tool/Loon/Lpx/Sub-Store.lpx, policy=DIRECT, enabled=true
+
+# 脚本/重写转换管理插件
+https://kelee.one/Tool/Loon/Lpx/Script-Hub.lpx, enabled=true
+
+# 节点相关信息查询
+https://kelee.one/Tool/Loon/Lpx/NodeLinkCheck.lpx, tag=节点线路查询, enabled=true
+https://kelee.one/Tool/Loon/Lpx/Node_detection_tool.lpx, enabled=true
+
+# ===== [Mitm] =====
+# HTTPS 解密证书与域名区
+[Mitm]
+ca-p12 = 
+ca-passphrase = 
+hostname =
