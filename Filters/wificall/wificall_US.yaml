@@ -1,0 +1,44 @@
+# 来源：https://github.com/iniwex5/tools/blob/main/rules/US-wifi-call.list
+# 更新时间：2026/6/25
+
+payload:
+  # US Carrier Core & Accounts
+  - DOMAIN-KEYWORD,mcc310
+  - DOMAIN-KEYWORD,t-mobile
+  - DOMAIN-SUFFIX,att.com
+  - DOMAIN-SUFFIX,att.net
+  - DOMAIN-SUFFIX,ultramobile.com
+  - DOMAIN-SUFFIX,redirect.ultra.me
+  - DOMAIN-SUFFIX,mvnoc.ai
+
+  # Talkatone Core
+  - DOMAIN-SUFFIX,talkatone.com
+  - DOMAIN-SUFFIX,tktn.be
+  - DOMAIN-SUFFIX,tktn.at
+
+  # Dependent Analytics, Ads & APIs
+  - DOMAIN-SUFFIX,mobilefuse.com
+  - DOMAIN-SUFFIX,inmobi.com
+  - DOMAIN-SUFFIX,crashlytics.com
+  - DOMAIN-SUFFIX,kochava.com
+  - DOMAIN-SUFFIX,cohere.com
+  - DOMAIN-SUFFIX,ip-api.com
+  - DOMAIN-SUFFIX,agkn.com
+  - DOMAIN-SUFFIX,inner-active.mobi
+  - DOMAIN-SUFFIX,optimizely.com
+
+  # Apple App Store Assets (如有减速可自行删改)
+  - DOMAIN-SUFFIX,mzstatic.com
+
+  # Talkatone & T-Mobile Wi-Fi Calling IPs
+  - IP-CIDR,50.117.27.0/24
+  - IP-CIDR,63.251.124.0/24
+  - IP-CIDR,66.94.0.0/19
+  - IP-CIDR,69.46.75.0/24
+  - IP-CIDR,205.164.56.0/24
+  - IP-CIDR,206.29.177.36/32
+  - IP-CIDR,208.54.0.0/16
+  - IP-CIDR,216.172.154.0/24
+
+  # AT&T Wi-Fi Calling IPs
+  - IP-CIDR,107.64.0.0/10
