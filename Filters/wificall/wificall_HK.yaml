@@ -1,0 +1,14 @@
+# 来源：https://github.com/iniwex5/tools/blob/main/rules/HK-wifi-call.list
+# 更新时间：2026/06/25
+
+payload:
+  # HK Carrier Core Keywords
+  - DOMAIN-KEYWORD,mcc454
+
+  # Profile Provisioning / Entitlement Server Domains
+  - DOMAIN,csl.prod.ondemandconnectivity.com
+  - DOMAIN,hhk.prod.ondemandconnectivity.com
+  - DOMAIN,snr.prod.ondemandconnectivity.com
+
+  # HK Carriers VoWiFi IPs
+  - IP-CIDR,107.178.224.0/19,no-resolve
