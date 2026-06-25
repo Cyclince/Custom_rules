@@ -1,0 +1,27 @@
+# 来源：https://raw.githubusercontent.com/iniwex5/tools/refs/heads/main/rules/UK-wifi-call.list
+# 更新时间：2026/06/25
+
+payload:
+  # UK Carrier Core Keywords & Profiles
+  - DOMAIN-KEYWORD,mcc234
+
+  # Vodafone & VOXI Core
+  - DOMAIN-SUFFIX,entsrv-uk.vodafone.com
+  - DOMAIN-SUFFIX,vuk-gto.prod.ondemandconnectivity.com
+  - DOMAIN,vfgb.idemia.io
+
+  # China Telecom Europe (CTExcel UK / EE Network)
+  - DOMAIN-SUFFIX,ct.ee.co.uk
+
+  # Vodafone / VOXI IPs
+  - IP-CIDR,88.82.0.0/19,no-resolve
+  - IP-CIDR,148.252.160.0/19,no-resolve
+
+  # CMLink UK (EE Network) IPs
+  - IP-CIDR,46.68.0.0/17,no-resolve
+
+  # Giffgaff (O2 Network) IPs
+  - IP-CIDR,87.194.0.0/16,no-resolve
+
+  # CTExcel UK (EE Network) IPs
+  - IP-CIDR,31.94.0.0/16,no-resolve
