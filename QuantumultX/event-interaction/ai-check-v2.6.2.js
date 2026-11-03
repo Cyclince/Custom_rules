@@ -1,6 +1,6 @@
-## AI 节点检测脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
-## 更新时间：2026-11-03
-## 功能简介：检测 ChatGPT、Claude、Gemini 的探针连通性，并展示出口 IP、地区、ASN、网络类型和风险评分。
+// AI 节点检测脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
+// 更新时间：2026-11-03
+// 功能简介：检测 ChatGPT、Claude、Gemini 的探针连通性，并展示出口 IP、地区、ASN、网络类型和风险评分。
 
 /**
  * AI 节点检测 v2.6.2 - Quantumult X
