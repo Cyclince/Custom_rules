@@ -1,6 +1,6 @@
-## Google 送中检测脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
-## 更新时间：2026-11-03
-## 功能简介：分别探测 IPv4、IPv6 出口，结合 Google 与 YouTube Premium 返回信息检查送中信号。
+// Google 送中检测脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
+// 更新时间：2026-11-03
+// 功能简介：分别探测 IPv4、IPv6 出口，结合 Google 与 YouTube Premium 返回信息检查送中信号。
 
 /**
  * Google 送中检测 v0.5.1
