@@ -1,6 +1,6 @@
-## IPPure 查询脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
-## 更新时间：2026-11-03
-## 功能简介：并发探测 IPv4、IPv6 和默认出口，展示位置、ISP、ASN、网络类型及 IP 风险评分。
+// IPPure 查询脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
+// 更新时间：2026-11-03
+// 功能简介：并发探测 IPv4、IPv6 和默认出口，展示位置、ISP、ASN、网络类型及 IP 风险评分。
 
 /***
 
