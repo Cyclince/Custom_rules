@@ -1,6 +1,6 @@
-## 节点线路检测脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
-## 更新时间：2026-11-03
-## 功能简介：结合入口与出口 IP、地区、ASN、BGP 和延迟信息，辅助分析节点网络与中转拓扑。
+// 节点线路检测脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
+// 更新时间：2026-11-03
+// 功能简介：结合入口与出口 IP、地区、ASN、BGP 和延迟信息，辅助分析节点网络与中转拓扑。
 
 /**
  * Quantumult X - Node Network Analyzer
