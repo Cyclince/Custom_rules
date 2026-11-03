@@ -1,6 +1,6 @@
-## 节点解锁查询脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
-## 更新时间：2026-11-03
-## 功能简介：并发检查流媒体、AI、Reddit 与 Cloudflare 的访问状态、地区信息及限制信号。
+// 节点解锁查询脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
+// 更新时间：2026-11-03
+// 功能简介：并发检查流媒体、AI、Reddit 与 Cloudflare 的访问状态、地区信息及限制信号。
 
 /**
  * Quantumult X - Streaming / AI / Cloudflare Check
