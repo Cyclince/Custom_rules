@@ -28,7 +28,7 @@
  * event-interaction
  */
 
-const VERSION = "1.5-qx";
+const VERSION = "1.5";
 
 const POLICY =
   typeof $environment !== "undefined" &&
@@ -133,34 +133,6 @@ function getHeader(resp, name) {
 }
 
 
-function withTimeout(promise, ms) {
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const timer = setTimeout(() => finish(reject, new Error("timeout")), ms);
-    function finish(handler, value) {
-      if (settled) return;
-      settled = true;
-      // Some script hosts do not expose clearTimeout.
-      if (typeof clearTimeout === "function") clearTimeout(timer);
-      handler(value);
-    }
-    Promise.resolve(promise).then(value => finish(resolve, value), error => finish(reject, error));
-  });
-}
-
-const REQUEST_DIAGNOSTICS = [];
-function recordDiagnostic(url, error) {
-  const host = String(url).replace(/^https?:\/\//, "").split("/")[0];
-  const message = String(error && (error.error || error.message || error.localizedDescription) || error).slice(0, 220);
-  const entry = host + ": " + message;
-  if (REQUEST_DIAGNOSTICS.length < 6) REQUEST_DIAGNOSTICS.push(entry);
-  console.log("[stream " + VERSION + "] " + entry);
-}
-function diagnosticHTML() {
-  return '<div style="padding:10px;font-size:11px;word-break:break-word">' +
-    escapeHTML("Quantumult X · " + VERSION) +
-    REQUEST_DIAGNOSTICS.map(x => '<br>' + escapeHTML(x)).join('') + '</div>';
-}
 async function fetchSafe(request) {
 
   const req =
@@ -181,9 +153,7 @@ async function fetchSafe(request) {
   try {
 
     const resp =
-      await withTimeout($task.fetch(req), req.timeout);
-    if (!resp) throw new Error("HTTP 返回为空");
-    if (statusCode(resp) >= 400) recordDiagnostic(req.url, "HTTP " + statusCode(resp));
+      await $task.fetch(req);
 
 
     return {
@@ -193,12 +163,11 @@ async function fetchSafe(request) {
     };
 
   } catch (e) {
-    recordDiagnostic(req.url, e);
 
     return {
       ok: false,
       resp: null,
-      error: String(e && (e.error || e.message) || e)
+      error: String(e)
     };
 
   }
@@ -717,7 +686,7 @@ async function testTikTok() {
     responses[1];
 
 
-  if (regionReq.ok && statusCode(regionReq.resp) >= 200 && statusCode(regionReq.resp) < 300) {
+  if (regionReq.ok) {
 
     const region =
       parseTikTokStoreRegion(
@@ -770,8 +739,10 @@ async function testTikTok() {
       );
 
 
-    const region = code >= 200 && code < 300
-      ? parseTikTokPageRegion(body) : "";
+    const region =
+      parseTikTokPageRegion(
+        body
+      );
 
 
     if (region) {
@@ -886,7 +857,7 @@ async function testTikTok() {
 function netflixUnavailable(resp) {
 
   if (!resp) {
-    return false;
+    return true;
   }
 
 
@@ -1545,7 +1516,7 @@ async function testPrimeVideo() {
     );
 
 
-  if (match && code >= 200 && code < 300) {
+  if (match) {
 
     const region =
       normalizeRegion(
@@ -1717,7 +1688,7 @@ async function testSpotify() {
     );
 
 
-  if (region && code >= 200 && code < 300) {
+  if (region) {
 
     return makeResult(
 
@@ -1776,45 +1747,262 @@ async function testSpotify() {
  * ============================================================ */
 
 async function testChatGPT() {
-  const headers = {"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"};
-  const probe = url => fetchSafe({url, method: "GET", opts: qxOpts(), headers});
-  const [web, app, trace] = await Promise.all([
-    probe("https://api.openai.com/compliance/cookie_requirements"),
-    probe("https://ios.chat.openai.com/"),
-    probe("https://chatgpt.com/cdn-cgi/trace")
-  ]);
-  const region = trace.ok && statusCode(trace.resp) === 200
-    ? normalizeRegion(parseTrace(responseBody(trace.resp)).loc) : "";
-  const suffix = region ? " ➟ " + regionDisplay(region) : "";
-  function inspect(result) {
-    if (!result.ok) return {kind: "unknown", text: networkErrorCode(result.error) === "TIMEOUT" ? "超时" : "连接失败"};
-    const code = statusCode(result.resp), body = responseBody(result.resp);
-    if (/unsupported_country|unsupported_country_region_territory|not available in your country/i.test(body))
-      return {kind: "blocked", text: "地区未支持"};
-    if (getHeader(result.resp, "cf-mitigated").toLowerCase() === "challenge" || strongChallengeHTML(result.resp) || /<title>\s*Just a moment/i.test(body))
-      return {kind: "unknown", text: "需人机验证"};
-    if (code === 429) return {kind: "unknown", text: "请求限流"};
-    if (code >= 200 && code < 300 && body.trim()) return {kind: "reachable", text: "探针可达"};
-    return {kind: "unknown", text: "HTTP " + code};
+
+  const responses =
+    await Promise.all([
+
+      fetchSafe({
+
+        url:
+          "https://api.openai.com/compliance/cookie_requirements",
+
+        method:
+          "GET",
+
+        opts:
+          qxOpts(),
+
+        headers: {
+
+          "User-Agent":
+            UA,
+
+          "Accept":
+            "*/*",
+
+          "Accept-Language":
+            "en-US,en;q=0.9",
+
+          "Authorization":
+            "Bearer null",
+
+          "Content-Type":
+            "application/json",
+
+          "Origin":
+            "https://platform.openai.com",
+
+          "Referer":
+            "https://platform.openai.com/"
+
+        }
+
+      }),
+
+
+      fetchSafe({
+
+        url:
+          "https://ios.chat.openai.com/",
+
+        method:
+          "GET",
+
+        opts:
+          qxOpts(),
+
+        headers: {
+
+          "User-Agent":
+            UA,
+
+          "Accept":
+            "*/*",
+
+          "Accept-Language":
+            "en-US,en;q=0.9"
+
+        }
+
+      }),
+
+
+      fetchSafe({
+
+        url:
+          "https://chatgpt.com/cdn-cgi/trace",
+
+        method:
+          "GET",
+
+        opts:
+          qxOpts(),
+
+        headers: {
+
+          "User-Agent":
+            UA
+
+        }
+
+      })
+
+    ]);
+
+
+  const web =
+    responses[0];
+
+  const app =
+    responses[1];
+
+  const trace =
+    responses[2];
+
+
+  let region =
+    "";
+
+
+  if (trace.ok) {
+
+    region =
+      normalizeRegion(
+
+        parseTrace(
+
+          responseBody(
+            trace.resp
+          )
+
+        ).loc
+
+      );
   }
-  const w = inspect(web), a = inspect(app);
-  // Old compliance/iOS endpoints are auxiliary signals, not a logged-in service test.
-  if (w.kind === "reachable" && a.kind === "reachable")
-    return makeResult("ok", "探针可达" + suffix);
-  if (w.kind === "blocked" && a.kind === "blocked")
-    return makeResult("no", "地区未支持" + suffix);
-  const home = await probe("https://chatgpt.com/");
-  const h = inspect(home);
-  const detail = "API：" + w.text + "；App：" + a.text;
-  if (h.kind === "blocked") return makeResult("no", "网页地区未支持" + suffix, detail);
-  const html = home.ok ? responseBody(home.resp) : "";
-  const isChatPage = h.kind === "reachable" && /<title[^>]*>[^<]*ChatGPT|<[^>]+(?:src|href)=["'][^"']*(?:cdn\.oaistatic\.com|\/auth\/login)/i.test(html);
-  if (isChatPage) return makeResult("warn", "网页可达 · " + (a.kind !== "reachable" ? "App " + a.text : "API " + w.text) + suffix, detail);
-  if (w.kind === "blocked" || a.kind === "blocked")
-    return makeResult("warn", "部分探针地区受限" + suffix, detail);
-  if ([web, app, home].every(x => !x.ok && networkErrorCode(x.error) === "TIMEOUT"))
-    return makeResult("timeout", "检测超时" + suffix);
-  return makeResult("warn", "解锁未确认 · " + (h.kind === "reachable" ? "网页内容未识别" : "网页" + h.text) + suffix, detail);
+
+
+  const suffix =
+    region
+      ? " ➟ " +
+        regionDisplay(region)
+      : "";
+
+
+  const webBlocked =
+    web.ok &&
+    /unsupported_country/i
+      .test(
+        responseBody(
+          web.resp
+        )
+      );
+
+
+  const appBlocked =
+    app.ok &&
+    /VPN|unsupported_country/i
+      .test(
+        responseBody(
+          app.resp
+        )
+      );
+
+
+  if (
+    web.ok &&
+    app.ok
+  ) {
+
+    if (
+      !webBlocked &&
+      !appBlocked
+    ) {
+
+      return makeResult(
+        "ok",
+        "完整支持" +
+        suffix
+      );
+    }
+
+
+    if (
+      !webBlocked &&
+      appBlocked
+    ) {
+
+      return makeResult(
+        "warn",
+        "Web 可用 / App 风控" +
+        suffix
+      );
+    }
+
+
+    if (
+      webBlocked &&
+      !appBlocked
+    ) {
+
+      return makeResult(
+        "warn",
+        "App 可用 / Web 未支持" +
+        suffix
+      );
+    }
+
+
+    return makeResult(
+      "no",
+      "地区未支持 / IP 受限" +
+      suffix
+    );
+  }
+
+
+  const errors =
+    [
+      web,
+      app,
+      trace
+    ]
+      .filter(
+        function(x) {
+          return !x.ok;
+        }
+      )
+      .map(
+        function(x) {
+          return networkErrorCode(
+            x.error
+          );
+        }
+      );
+
+
+  if (
+    errors.length &&
+    errors.every(
+      function(x) {
+        return x === "TIMEOUT";
+      }
+    )
+  ) {
+
+    return makeResult(
+      "timeout",
+      "检测超时"
+    );
+  }
+
+
+  if (
+    trace.ok &&
+    region
+  ) {
+
+    return makeResult(
+      "warn",
+      "仅地区检测 ➟ " +
+      regionDisplay(region)
+    );
+  }
+
+
+  return makeResult(
+    "no",
+    "无法访问"
+  );
 }
 
 
@@ -3511,7 +3699,7 @@ async function getPolicyPath() {
   try {
 
     const resolve =
-      await withTimeout($configuration
+      await $configuration
         .sendMessage({
 
           action:
@@ -3519,7 +3707,8 @@ async function getPolicyPath() {
 
           content:
             POLICY
-        }), 1500);
+
+        });
 
 
     if (
@@ -4176,7 +4365,7 @@ function render(
       render(
         rows,
         policyPath
-      ) + diagnosticHTML()
+      )
 
   });
 
