@@ -1,6 +1,71 @@
 // 节点解锁查询脚本，制作 by 翀𝙡𝙧 TG：https://t.me/chong_redaily
-// 更新时间：2026-11-03
+// 更新时间：2026-11-07
 // 功能简介：并发检查流媒体、AI、Reddit 与 Cloudflare 的访问状态、地区信息及限制信号。
+
+// Loon host adapter: independently implemented following Script-Hub's compatibility-layer approach.
+// Reference: https://github.com/Script-Hub-Org/Script-Hub/blob/main/script-converter.js
+const __loonParams = typeof $environment !== "undefined" && $environment.params || {};
+const __loonInfo = __loonParams.nodeInfo || {};
+const __loonNode = __loonInfo.name || __loonParams.node || __loonParams.policyGroup || "";
+const __loonNativeDone = $done;
+let __loonFinished = false;
+const __loonDone = value => {
+  if (__loonFinished) return;
+  __loonFinished = true;
+  __loonNativeDone(value);
+};
+// Loon may not expose clearTimeout: use cancellable callback tokens.
+const __loonNativeTimer = setTimeout;
+const __loonTimers = new Set();
+const __loonSetTimeout = (fn, ms, ...args) => {
+  const token = {};
+  __loonTimers.add(token);
+  __loonNativeTimer(() => {
+    if (__loonTimers.delete(token) && !__loonFinished) fn(...args);
+  }, ms);
+  return token;
+};
+const __loonClearTimeout = token => __loonTimers.delete(token);
+const __loonTask = {
+  fetch(request) {
+    return new Promise((resolve, reject) => {
+      const req = typeof request === "string" ? {url: request} : Object.assign({}, request);
+      const opts = req.opts || {};
+      const policy = opts.policy || __loonNode;
+      if (policy) req.node = /^direct$/i.test(policy) ? "DIRECT" : policy;
+      if (typeof opts.redirection === "boolean") req["auto-redirect"] = opts.redirection;
+      delete req.opts;
+      const method = String(req.method || "GET").toLowerCase();
+      delete req.method;
+      if (typeof $httpClient[method] !== "function") return reject(new Error("Unsupported method: " + method));
+      const timeout = Number(req.timeout) > 0 ? Number(req.timeout) : 7000;
+      req.timeout = timeout;
+      let settled = false;
+      const timer = __loonSetTimeout(() => {
+        if (!settled) { settled = true; reject(new Error("request timeout")); }
+      }, timeout);
+      function callback(error, response, data) {
+        if (settled) return;
+        settled = true;
+        __loonClearTimeout(timer);
+        if (error || !response) return reject(new Error(String(error && (error.message || error.error) || error || "Empty HTTP response")));
+        resolve(Object.assign({}, response, {
+          statusCode: Number(response.status || response.statusCode || 0),
+          body: data == null ? "" : data,
+          headers: response.headers || {}
+        }));
+      }
+      try { $httpClient[method](req, callback); }
+      catch (error) { callback(error); }
+    });
+  }
+};
+const __loonPrefs = {
+  valueForKey: key => $persistentStore.read(key),
+  setValueForKey: (value, key) => $persistentStore.write(value, key)
+};
+// Keep the detection body isolated; never overwrite Loon's native $environment.
+(function ($environment, $task, $prefs, $done, setTimeout, clearTimeout) {
 
 /**
  * Quantumult X - Streaming / AI / Cloudflare Check
@@ -25,7 +90,7 @@
  * Cloudflare
  *
  * Quantumult X 598+
- * event-interaction
+ * Loon: 使用随附的 Scripts.conf 中对应 generic 入口。
  */
 
 const VERSION = "1.5.1";
@@ -1755,270 +1820,45 @@ async function testSpotify() {
  * ============================================================ */
 
 async function testChatGPT() {
-
-  const responses =
-    await Promise.all([
-
-      fetchSafe({
-
-        url:
-          "https://api.openai.com/compliance/cookie_requirements",
-
-        method:
-          "GET",
-
-        opts:
-          qxOpts(),
-
-        headers: {
-
-          "User-Agent":
-            UA,
-
-          "Accept":
-            "*/*",
-
-          "Accept-Language":
-            "en-US,en;q=0.9",
-
-          "Authorization":
-            "Bearer null",
-
-          "Content-Type":
-            "application/json",
-
-          "Origin":
-            "https://platform.openai.com",
-
-          "Referer":
-            "https://platform.openai.com/"
-
-        }
-
-      }),
-
-
-      fetchSafe({
-
-        url:
-          "https://ios.chat.openai.com/",
-
-        method:
-          "GET",
-
-        opts:
-          qxOpts(),
-
-        headers: {
-
-          "User-Agent":
-            UA,
-
-          "Accept":
-            "*/*",
-
-          "Accept-Language":
-            "en-US,en;q=0.9"
-
-        }
-
-      }),
-
-
-      fetchSafe({
-
-        url:
-          "https://chatgpt.com/cdn-cgi/trace",
-
-        method:
-          "GET",
-
-        opts:
-          qxOpts(),
-
-        headers: {
-
-          "User-Agent":
-            UA
-
-        }
-
-      })
-
-    ]);
-
-
-  const web =
-    responses[0];
-
-  const app =
-    responses[1];
-
-  const trace =
-    responses[2];
-
-
-  let region =
-    "";
-
-
-  if (trace.ok) {
-
-    region =
-      normalizeRegion(
-
-        parseTrace(
-
-          responseBody(
-            trace.resp
-          )
-
-        ).loc
-
-      );
+  const headers = {"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"};
+  const probe = url => fetchSafe({url, method: "GET", opts: qxOpts(), headers});
+  const [web, app, trace] = await Promise.all([
+    probe("https://api.openai.com/compliance/cookie_requirements"),
+    probe("https://ios.chat.openai.com/"),
+    probe("https://chatgpt.com/cdn-cgi/trace")
+  ]);
+  const region = trace.ok && statusCode(trace.resp) === 200
+    ? normalizeRegion(parseTrace(responseBody(trace.resp)).loc) : "";
+  const suffix = region ? " ➟ " + regionDisplay(region) : "";
+  function inspect(result) {
+    if (!result.ok) return {kind: "unknown", text: networkErrorCode(result.error) === "TIMEOUT" ? "超时" : "连接失败"};
+    const code = statusCode(result.resp), body = responseBody(result.resp);
+    if (/unsupported_country|unsupported_country_region_territory|not available in your country/i.test(body))
+      return {kind: "blocked", text: "地区未支持"};
+    if (getHeader(result.resp, "cf-mitigated").toLowerCase() === "challenge" || strongChallengeHTML(result.resp) || /<title>\s*Just a moment/i.test(body))
+      return {kind: "unknown", text: "需人机验证"};
+    if (code === 429) return {kind: "unknown", text: "请求限流"};
+    if (code >= 200 && code < 300 && body.trim()) return {kind: "reachable", text: "探针可达"};
+    return {kind: "unknown", text: "HTTP " + code};
   }
-
-
-  const suffix =
-    region
-      ? " ➟ " +
-        regionDisplay(region)
-      : "";
-
-
-  const webBlocked =
-    web.ok &&
-    /unsupported_country/i
-      .test(
-        responseBody(
-          web.resp
-        )
-      );
-
-
-  const appBlocked =
-    app.ok &&
-    /VPN|unsupported_country/i
-      .test(
-        responseBody(
-          app.resp
-        )
-      );
-
-
-  // HTTP completion alone does not establish availability.
-  const abnormal = [web, app].find(x => x.ok &&
-    (statusCode(x.resp) < 200 || statusCode(x.resp) >= 300 || strongChallengeHTML(x.resp)) &&
-    !(x === web ? webBlocked : appBlocked));
-  if (abnormal) {
-    return makeResult("warn", "检测异常 · HTTP " + statusCode(abnormal.resp) + suffix);
-  }
-
-  if (
-    web.ok &&
-    app.ok
-  ) {
-
-    if (
-      !webBlocked &&
-      !appBlocked
-    ) {
-
-      return makeResult(
-        "ok",
-        "完整支持" +
-        suffix
-      );
-    }
-
-
-    if (
-      !webBlocked &&
-      appBlocked
-    ) {
-
-      return makeResult(
-        "warn",
-        "Web 可用 / App 风控" +
-        suffix
-      );
-    }
-
-
-    if (
-      webBlocked &&
-      !appBlocked
-    ) {
-
-      return makeResult(
-        "warn",
-        "App 可用 / Web 未支持" +
-        suffix
-      );
-    }
-
-
-    return makeResult(
-      "no",
-      "地区未支持 / IP 受限" +
-      suffix
-    );
-  }
-
-
-  const errors =
-    [
-      web,
-      app,
-      trace
-    ]
-      .filter(
-        function(x) {
-          return !x.ok;
-        }
-      )
-      .map(
-        function(x) {
-          return networkErrorCode(
-            x.error
-          );
-        }
-      );
-
-
-  if (
-    errors.length &&
-    errors.every(
-      function(x) {
-        return x === "TIMEOUT";
-      }
-    )
-  ) {
-
-    return makeResult(
-      "timeout",
-      "检测超时"
-    );
-  }
-
-
-  if (
-    trace.ok &&
-    region
-  ) {
-
-    return makeResult(
-      "warn",
-      "仅地区检测 ➟ " +
-      regionDisplay(region)
-    );
-  }
-
-
-  return makeResult(
-    "no",
-    "无法访问"
-  );
+  const w = inspect(web), a = inspect(app);
+  // Old compliance/iOS endpoints are auxiliary signals, not a logged-in service test.
+  if (w.kind === "reachable" && a.kind === "reachable")
+    return makeResult("ok", "探针可达" + suffix);
+  if (w.kind === "blocked" && a.kind === "blocked")
+    return makeResult("no", "地区未支持" + suffix);
+  const home = await probe("https://chatgpt.com/");
+  const h = inspect(home);
+  const detail = "API：" + w.text + "；App：" + a.text;
+  if (h.kind === "blocked") return makeResult("no", "网页地区未支持" + suffix, detail);
+  const html = home.ok ? responseBody(home.resp) : "";
+  const isChatPage = h.kind === "reachable" && /<title[^>]*>[^<]*ChatGPT|<[^>]+(?:src|href)=["'][^"']*(?:cdn\.oaistatic\.com|\/auth\/login)/i.test(html);
+  if (isChatPage) return makeResult("warn", "网页可达 · " + (a.kind !== "reachable" ? "App " + a.text : "API " + w.text) + suffix, detail);
+  if (w.kind === "blocked" || a.kind === "blocked")
+    return makeResult("warn", "部分探针地区受限" + suffix, detail);
+  if ([web, app, home].every(x => !x.ok && networkErrorCode(x.error) === "TIMEOUT"))
+    return makeResult("timeout", "检测超时" + suffix);
+  return makeResult("warn", "解锁未确认 · " + (h.kind === "reachable" ? "网页内容未识别" : "网页" + h.text) + suffix, detail);
 }
 
 
@@ -3696,74 +3536,7 @@ async function testCloudflare() {
  * ============================================================ */
 
 async function getPolicyPath() {
-
-  if (!POLICY) {
-
-    return "当前策略";
-  }
-
-
-  if (
-    typeof $configuration ===
-    "undefined"
-  ) {
-
-    return POLICY;
-  }
-
-
-  try {
-
-    const resolve =
-      await withTimeout($configuration
-        .sendMessage({
-
-          action:
-            "get_policy_state",
-
-          content:
-            POLICY
-        }), 1500);
-
-
-    if (
-      resolve &&
-      !resolve.error &&
-      resolve.ret &&
-      resolve.ret[
-        POLICY
-      ] !== undefined
-    ) {
-
-      let path =
-        JSON.stringify(
-          resolve.ret[
-            POLICY
-          ]
-        );
-
-
-      if (path) {
-
-        return path
-
-          .replace(
-            /\"|\[|\]/g,
-            ""
-          )
-
-          .replace(
-            /,/g,
-            " ➟ "
-          );
-
-      }
-    }
-
-  } catch (_) {}
-
-
-  return POLICY;
+  return POLICY || "当前分流规则";
 }
 
 
@@ -4435,3 +4208,4 @@ function render(
 
   }
 );
+})({params: __loonNode, executor: "event-interaction"}, __loonTask, __loonPrefs, __loonDone, __loonSetTimeout, __loonClearTimeout);
