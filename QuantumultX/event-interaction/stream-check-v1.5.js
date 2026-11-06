@@ -2,74 +2,9 @@
 // 更新时间：2026-11-07
 // 功能简介：并发检查流媒体、AI、Reddit 与 Cloudflare 的访问状态、地区信息及限制信号。
 
-// Loon host adapter: independently implemented following Script-Hub's compatibility-layer approach.
-// Reference: https://github.com/Script-Hub-Org/Script-Hub/blob/main/script-converter.js
-const __loonParams = typeof $environment !== "undefined" && $environment.params || {};
-const __loonInfo = __loonParams.nodeInfo || {};
-const __loonNode = __loonInfo.name || __loonParams.node || __loonParams.policyGroup || "";
-const __loonNativeDone = $done;
-let __loonFinished = false;
-const __loonDone = value => {
-  if (__loonFinished) return;
-  __loonFinished = true;
-  __loonNativeDone(value);
-};
-// Loon may not expose clearTimeout: use cancellable callback tokens.
-const __loonNativeTimer = setTimeout;
-const __loonTimers = new Set();
-const __loonSetTimeout = (fn, ms, ...args) => {
-  const token = {};
-  __loonTimers.add(token);
-  __loonNativeTimer(() => {
-    if (__loonTimers.delete(token) && !__loonFinished) fn(...args);
-  }, ms);
-  return token;
-};
-const __loonClearTimeout = token => __loonTimers.delete(token);
-const __loonTask = {
-  fetch(request) {
-    return new Promise((resolve, reject) => {
-      const req = typeof request === "string" ? {url: request} : Object.assign({}, request);
-      const opts = req.opts || {};
-      const policy = opts.policy || __loonNode;
-      if (policy) req.node = /^direct$/i.test(policy) ? "DIRECT" : policy;
-      if (typeof opts.redirection === "boolean") req["auto-redirect"] = opts.redirection;
-      delete req.opts;
-      const method = String(req.method || "GET").toLowerCase();
-      delete req.method;
-      if (typeof $httpClient[method] !== "function") return reject(new Error("Unsupported method: " + method));
-      const timeout = Number(req.timeout) > 0 ? Number(req.timeout) : 7000;
-      req.timeout = timeout;
-      let settled = false;
-      const timer = __loonSetTimeout(() => {
-        if (!settled) { settled = true; reject(new Error("request timeout")); }
-      }, timeout);
-      function callback(error, response, data) {
-        if (settled) return;
-        settled = true;
-        __loonClearTimeout(timer);
-        if (error || !response) return reject(new Error(String(error && (error.message || error.error) || error || "Empty HTTP response")));
-        resolve(Object.assign({}, response, {
-          statusCode: Number(response.status || response.statusCode || 0),
-          body: data == null ? "" : data,
-          headers: response.headers || {}
-        }));
-      }
-      try { $httpClient[method](req, callback); }
-      catch (error) { callback(error); }
-    });
-  }
-};
-const __loonPrefs = {
-  valueForKey: key => $persistentStore.read(key),
-  setValueForKey: (value, key) => $persistentStore.write(value, key)
-};
-// Keep the detection body isolated; never overwrite Loon's native $environment.
-(function ($environment, $task, $prefs, $done, setTimeout, clearTimeout) {
-
 /**
  * Quantumult X - Streaming / AI / Cloudflare Check
- * Version: 1.5.1
+ * Version: 1.5
  *
  * Status:
  * 🎉 = 正常
@@ -90,10 +25,10 @@ const __loonPrefs = {
  * Cloudflare
  *
  * Quantumult X 598+
- * Loon: 使用随附的 Scripts.conf 中对应 generic 入口。
+ * event-interaction
  */
 
-const VERSION = "1.5.1";
+const VERSION = "1.5-qx";
 
 const POLICY =
   typeof $environment !== "undefined" &&
@@ -200,14 +135,32 @@ function getHeader(resp, name) {
 
 function withTimeout(promise, ms) {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("timeout")), ms);
-    Promise.resolve(promise).then(
-      value => { clearTimeout(timer); resolve(value); },
-      error => { clearTimeout(timer); reject(error); }
-    );
+    let settled = false;
+    const timer = setTimeout(() => finish(reject, new Error("timeout")), ms);
+    function finish(handler, value) {
+      if (settled) return;
+      settled = true;
+      // Some script hosts do not expose clearTimeout.
+      if (typeof clearTimeout === "function") clearTimeout(timer);
+      handler(value);
+    }
+    Promise.resolve(promise).then(value => finish(resolve, value), error => finish(reject, error));
   });
 }
 
+const REQUEST_DIAGNOSTICS = [];
+function recordDiagnostic(url, error) {
+  const host = String(url).replace(/^https?:\/\//, "").split("/")[0];
+  const message = String(error && (error.error || error.message || error.localizedDescription) || error).slice(0, 220);
+  const entry = host + ": " + message;
+  if (REQUEST_DIAGNOSTICS.length < 6) REQUEST_DIAGNOSTICS.push(entry);
+  console.log("[stream " + VERSION + "] " + entry);
+}
+function diagnosticHTML() {
+  return '<div style="padding:10px;font-size:11px;word-break:break-word">' +
+    escapeHTML("Quantumult X · " + VERSION) +
+    REQUEST_DIAGNOSTICS.map(x => '<br>' + escapeHTML(x)).join('') + '</div>';
+}
 async function fetchSafe(request) {
 
   const req =
@@ -229,6 +182,8 @@ async function fetchSafe(request) {
 
     const resp =
       await withTimeout($task.fetch(req), req.timeout);
+    if (!resp) throw new Error("HTTP 返回为空");
+    if (statusCode(resp) >= 400) recordDiagnostic(req.url, "HTTP " + statusCode(resp));
 
 
     return {
@@ -238,6 +193,7 @@ async function fetchSafe(request) {
     };
 
   } catch (e) {
+    recordDiagnostic(req.url, e);
 
     return {
       ok: false,
@@ -3536,7 +3492,74 @@ async function testCloudflare() {
  * ============================================================ */
 
 async function getPolicyPath() {
-  return POLICY || "当前分流规则";
+
+  if (!POLICY) {
+
+    return "当前策略";
+  }
+
+
+  if (
+    typeof $configuration ===
+    "undefined"
+  ) {
+
+    return POLICY;
+  }
+
+
+  try {
+
+    const resolve =
+      await withTimeout($configuration
+        .sendMessage({
+
+          action:
+            "get_policy_state",
+
+          content:
+            POLICY
+        }), 1500);
+
+
+    if (
+      resolve &&
+      !resolve.error &&
+      resolve.ret &&
+      resolve.ret[
+        POLICY
+      ] !== undefined
+    ) {
+
+      let path =
+        JSON.stringify(
+          resolve.ret[
+            POLICY
+          ]
+        );
+
+
+      if (path) {
+
+        return path
+
+          .replace(
+            /\"|\[|\]/g,
+            ""
+          )
+
+          .replace(
+            /,/g,
+            " ➟ "
+          );
+
+      }
+    }
+
+  } catch (_) {}
+
+
+  return POLICY;
 }
 
 
@@ -4153,7 +4176,7 @@ function render(
       render(
         rows,
         policyPath
-      )
+      ) + diagnosticHTML()
 
   });
 
@@ -4208,4 +4231,3 @@ function render(
 
   }
 );
-})({params: __loonNode, executor: "event-interaction"}, __loonTask, __loonPrefs, __loonDone, __loonSetTimeout, __loonClearTimeout);
